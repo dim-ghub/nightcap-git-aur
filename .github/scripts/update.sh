@@ -77,11 +77,6 @@ fi
 export GIT_COMMITTER_NAME=$GIT_AUTHOR_NAME GIT_COMMITTER_EMAIL=$GIT_AUTHOR_EMAIL
 message="Update to $new_pkgver"
 
-log "Committing to GitHub"
-git add PKGBUILD .SRCINFO
-git commit -m "$message"
-git push origin HEAD
-
 log "Publishing to AUR"
 install -dm700 ~/.ssh
 printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur
@@ -99,4 +94,9 @@ else
   git -C "$aur_dir" commit -m "$message"
   git -C "$aur_dir" push origin HEAD:master
 fi
+# GitHub last: if the AUR push fails, the next run retries the whole bump.
+log "Committing to GitHub"
+git add PKGBUILD .SRCINFO
+git commit -m "$message"
+git push origin HEAD
 log "Done: $new_pkgver"
