@@ -78,11 +78,13 @@ export GIT_COMMITTER_NAME=$GIT_AUTHOR_NAME GIT_COMMITTER_EMAIL=$GIT_AUTHOR_EMAIL
 message="Update to $new_pkgver"
 
 log "Publishing to AUR"
-install -dm700 ~/.ssh
-printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur
-chmod 600 ~/.ssh/aur
-printf '%s\n' "$AUR_HOST_KEY" > ~/.ssh/known_hosts
-export GIT_SSH_COMMAND='ssh -i ~/.ssh/aur -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes'
+# Absolute paths: ssh resolves ~ from passwd, not $HOME (which differs in CI).
+ssh_dir=$(mktemp -d)
+trap 'rm -rf "$ssh_dir"' EXIT
+printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > "$ssh_dir/aur"
+chmod 600 "$ssh_dir/aur"
+printf '%s\n' "$AUR_HOST_KEY" > "$ssh_dir/known_hosts"
+export GIT_SSH_COMMAND="ssh -i $ssh_dir/aur -o IdentitiesOnly=yes -o UserKnownHostsFile=$ssh_dir/known_hosts -o StrictHostKeyChecking=yes"
 
 aur_dir=$(mktemp -d)
 git clone "$AUR_REPO" "$aur_dir"
